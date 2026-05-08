@@ -1,0 +1,101 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: message-service
+          uri: lb://message-service
+          predicates:
+            - Path=/api/messages/**
+          filters:
+            - StripPrefix=1
+        - id: room-service
+          uri: lb://room-service
+          predicates:
+            - Path=/api/rooms/**
+          filters:
+            - StripPrefix=1
+        - id: media-service
+          uri: lb://media-service
+          predicates:
+            - Path=/api/media/**
+          filters:
+            - StripPrefix=1
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
+        - id: presence-service
+          uri: lb://presence-service
+          predicates:
+            - Path=/api/presence/**
+          filters:
+            - StripPrefix=1
+        - id: websocket-handler
+          uri: lb://websocket-handler
+          predicates:
+            - Path=/ws/**
+        - id: platform-admin-service
+          uri: lb://platform-admin-service
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - StripPrefix=1
+        - id: payment-public
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payments/webhook/**, /api/payments/plans, /api/payments/plans/**, /api/payments/health, /api/payments/subscription/limits/**
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - AuthenticationFilter
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: http://localhost:8081/api/api-docs
+      - name: Room Service
+        url: http://localhost:8082/api/api-docs
+      - name: Message Service
+        url: http://localhost:8083/api/api-docs
+      - name: Media Service
+        url: http://localhost:8084/api/api-docs
+      - name: Presence Service
+        url: http://localhost:8085/api/api-docs
+      - name: Notification Service
+        url: http://localhost:8087/api/api-docs
+      - name: Payment Service
+        url: http://localhost:8089/api/api-docs
+
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.connecthub.gateway: DEBUG

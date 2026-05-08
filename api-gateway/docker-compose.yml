@@ -1,0 +1,56 @@
+version: "3.9"
+
+# ── Run the full ConnectHub infrastructure together ───────
+# Start order: eureka → gateway → services
+#
+# Usage:
+#   docker-compose up --build
+#
+# Individual services (auth, room, message …) have their own
+# docker-compose files and connect to this shared network.
+
+services:
+
+  # ── Eureka Service Discovery ──────────────────────────
+  eureka-server:
+    image: connecthub/eureka-server:latest
+    # Build from sibling folder — adjust path if needed
+    build:
+      context: ../eureka-server
+      dockerfile: Dockerfile
+    container_name: connecthub-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: connecthub-eureka-secret
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecthub-net
+
+  # ── API Gateway ───────────────────────────────────────
+  api-gateway:
+    build: .
+    container_name: connecthub-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:connecthub-eureka-secret@eureka-server:8761/eureka/
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      SPRING_PROFILES_ACTIVE: prod
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - connecthub-net
+
+networks:
+  connecthub-net:
+    name: connecthub-net
+    driver: bridge
