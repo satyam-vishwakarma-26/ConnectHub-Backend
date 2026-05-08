@@ -1,0 +1,46 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+
+  # ── Dashboard security ────────────────────────────────────
+  security:
+    user:
+      name: admin
+      password: connecthub-eureka-secret
+
+eureka:
+  instance:
+    hostname: localhost
+
+  client:
+    # This IS the registry — don't register with itself
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+  server:
+    # How long to wait before evicting instances that stopped sending heartbeats
+    eviction-interval-timer-in-ms: 5000
+    # In dev mode disable the self-preservation threshold so instances get
+    # removed quickly when stopped
+    enable-self-preservation: false
+    renewal-percent-threshold: 0.85
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    com.connecthub: DEBUG
