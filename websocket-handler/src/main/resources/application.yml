@@ -1,0 +1,63 @@
+server:
+  port: 8086
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: websocket-handler
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:8080"
+
+  # Downstream service URLs — used by WebClient
+  services:
+    message-service:    http://localhost:8083/api
+    presence-service:   http://localhost:8085/api
+    notification-service: http://localhost:8087/api
+    room-service:       http://localhost:8082/api
+    auth-service:       http://localhost:8081/api
+
+  websocket:
+    # Heartbeat interval (ms) — client must send PING within this window
+    heartbeat-ms: 25000
+    # STOMP message size limit (bytes)
+    message-size-limit: 65536
+    # Send buffer size (bytes)
+    send-buffer-limit: 524288
+    # Send timeout (ms) — drop slow clients after this
+    send-time-limit: 10000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.connecthub: DEBUG
+    org.springframework.web.socket: INFO
+    org.springframework.messaging: INFO
