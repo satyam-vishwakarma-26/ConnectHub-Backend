@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  mysql-media:
+    image: mysql:8.0
+    container_name: connecthub-media-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: connecthub_media
+    ports:
+      - "3309:3306"
+    volumes:
+      - media_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  media-service:
+    build: .
+    container_name: connecthub-media-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-media:3306/connecthub_media?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      APP_AWS_REGION: us-east-1
+      APP_AWS_S3_BUCKET: connecthub-media
+      APP_CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8080"
+      # Supply real credentials via environment — never commit them
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      mysql-media:
+        condition: service_healthy
+
+volumes:
+  media_mysql_data:
