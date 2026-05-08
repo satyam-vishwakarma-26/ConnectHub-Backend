@@ -1,0 +1,71 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/connecthub_payment?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 9981
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  quartz:
+    job-store-type: memory
+    scheduler-name: PaymentScheduler
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000
+
+razorpay:
+  key-id: rzp_test_xxxx
+  key-secret: your_secret
+  currency: INR
+  webhook-secret: placeholder_webhook_secret
+
+services:
+  auth-service:
+    url: http://auth-service
+  notification-service:
+    url: http://notification-service
+
+logging:
+  level:
+    com.connecthub: DEBUG
+    org.springframework.security: INFO
