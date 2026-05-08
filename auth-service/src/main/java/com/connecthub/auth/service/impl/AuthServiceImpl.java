@@ -9,6 +9,7 @@ import com.connecthub.auth.repository.UserRepository;
 import com.connecthub.auth.security.CustomUserDetails;
 import com.connecthub.auth.security.JwtService;
 import com.connecthub.auth.service.AuthService;
+import com.connecthub.auth.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,11 +34,80 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final com.connecthub.auth.repository.PasswordResetOtpRepository otpRepository;
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
+    // ── Registration OTP ───────────────────────────────────
+
+    @Override
+    public void requestRegistrationOtp(String email) {
+        String cleanEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(cleanEmail)) {
+            throw new DuplicateResourceException("Email already registered: " + cleanEmail);
+        }
+
+        otpRepository.invalidateAllOtpsByEmail(cleanEmail);
+
+        String otp = String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
+        com.connecthub.auth.entity.PasswordResetOtp otpEntity = com.connecthub.auth.entity.PasswordResetOtp.builder()
+                .email(cleanEmail)
+                .otp(otp)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .attempts(0)
+                .isVerified(false)
+                .isUsed(false)
+                .build();
+        otpRepository.save(otpEntity);
+        emailService.sendRegistrationOtpEmail(cleanEmail, otp);
+    }
+
+    @Override
+    public void verifyRegistrationOtp(String email, String otp) {
+        String cleanEmail = email.trim().toLowerCase();
+        com.connecthub.auth.entity.PasswordResetOtp otpEntity = otpRepository
+                .findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(cleanEmail)
+                .orElseThrow(() -> new BadRequestException("No active OTP found. Please request a new one."));
+
+        if (otpEntity.getIsVerified()) {
+            throw new BadRequestException("OTP already verified. Please proceed with registration.");
+        }
+        if (otpEntity.isMaxAttemptsReached()) {
+            otpEntity.setIsUsed(true);
+            otpRepository.save(otpEntity);
+            throw new BadRequestException("Maximum attempts reached. Request a new OTP.");
+        }
+        if (otpEntity.isExpired()) {
+            otpEntity.setIsUsed(true);
+            otpRepository.save(otpEntity);
+            throw new BadRequestException("OTP expired. Request a new one.");
+        }
+        
+        otpEntity.setAttempts(otpEntity.getAttempts() + 1);
+        if (!otpEntity.getOtp().equals(otp.trim())) {
+            otpRepository.save(otpEntity);
+            throw new BadRequestException("Invalid OTP.");
+        }
+
+        otpEntity.setIsVerified(true);
+        otpRepository.save(otpEntity);
+    }
 
     // ── Register ───────────────────────────────────────────
 
     @Override
     public AuthResponse register(RegisterRequest request) {
+        String cleanEmail = request.getEmail().trim().toLowerCase();
+        
+        // Ensure OTP was verified before registration
+        com.connecthub.auth.entity.PasswordResetOtp otpEntity = otpRepository
+                .findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(cleanEmail)
+                .orElseThrow(() -> new BadRequestException("Please verify your email first."));
+                
+        if (!otpEntity.getIsVerified() || otpEntity.isExpired()) {
+            throw new BadRequestException("Email not verified or verification expired.");
+        }
+
         // Check duplicate email
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already registered: " + request.getEmail());
@@ -60,6 +130,13 @@ public class AuthServiceImpl implements AuthService {
 
         user = userRepository.save(user);
         log.info("Registered new user: {}", user.getEmail());
+
+        // Mark OTP as used
+        otpEntity.setIsUsed(true);
+        otpRepository.save(otpEntity);
+
+        // Send welcome email via RabbitMQ (async, non-blocking)
+        emailService.sendWelcomeEmail(user.getEmail(), user.getUsername());
 
         return buildAuthResponse(user);
     }
@@ -233,6 +310,9 @@ public class AuthServiceImpl implements AuthService {
         user.setRefreshToken(null);
         userRepository.save(user);
         log.info("User suspended: {}", user.getEmail());
+
+        // Notify user via email (async via RabbitMQ)
+        emailService.sendAccountSuspendedEmail(user.getEmail(), user.getUsername());
     }
 
     @Override
@@ -246,8 +326,36 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void deleteUser(Long userId) {
         User user = findUserById(userId);
+        String email = user.getEmail();
+        String username = user.getUsername();
+
         userRepository.delete(user);
         log.info("User deleted: id={}", userId);
+
+        // Notify user via email (async via RabbitMQ) — sent after delete since queue is async
+        emailService.sendAccountDeletedEmail(email, username);
+    }
+
+    @Override
+    public void promoteUser(Long userId) {
+        User user = findUserById(userId);
+        if (user.getRole() == User.UserRole.PLATFORM_ADMIN) {
+            throw new BadRequestException("User is already a platform admin.");
+        }
+        user.setRole(User.UserRole.PLATFORM_ADMIN);
+        userRepository.save(user);
+        log.info("User promoted to platform admin: {}", user.getEmail());
+    }
+
+    @Override
+    public void demoteUser(Long userId) {
+        User user = findUserById(userId);
+        if (user.getRole() == User.UserRole.USER) {
+            throw new BadRequestException("User is already a regular user.");
+        }
+        user.setRole(User.UserRole.USER);
+        userRepository.save(user);
+        log.info("User demoted to regular user: {}", user.getEmail());
     }
 
     @Override

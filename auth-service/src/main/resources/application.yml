@@ -22,26 +22,49 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: satyamsharma000000s@gmail.com
+    password: tova bqqb zrnd vszh
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: GOOGLE_CLIENT_ID
-            client-secret: GOOGLE_CLIENT_SECRET
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: email, profile
-            redirect-uri: "{baseUrl}/api/auth/oauth2/callback/{registrationId}"
+            redirect-uri: "{baseUrl}/auth/oauth2/callback/{registrationId}"
           github:
-            client-id: GITHUB_CLIENT_ID
-            client-secret: GITHUB_CLIENT_SECRET
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
-            redirect-uri: "{baseUrl}/api/auth/oauth2/callback/{registrationId}"
+            redirect-uri: "{baseUrl}/auth/oauth2/callback/{registrationId}"
 
 app:
   jwt:
     secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-    expiration-ms: 86400000        # 24 hours
-    refresh-expiration-ms: 604800000  # 7 days
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+  frontend-url: http://localhost:3000
 
   cors:
     allowed-origins: "http://localhost:3000,http://localhost:8080"
@@ -56,3 +79,20 @@ logging:
   level:
     com.connecthub: DEBUG
     org.springframework.security: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /api/actuator/health
+    status-page-url-path: /api/actuator/info

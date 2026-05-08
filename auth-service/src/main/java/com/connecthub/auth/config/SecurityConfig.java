@@ -4,6 +4,8 @@ import com.connecthub.auth.security.CustomOAuth2UserService;
 import com.connecthub.auth.security.CustomUserDetailsService;
 import com.connecthub.auth.security.JwtAuthenticationFilter;
 import com.connecthub.auth.security.OAuth2AuthenticationSuccessHandler;
+import com.connecthub.auth.security.OAuth2AuthenticationFailureHandler;
+import com.connecthub.auth.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -38,20 +40,31 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final CustomOAuth2UserService oAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    // ── Public endpoints (no JWT required) ────────────────
     private static final String[] PUBLIC_URLS = {
             "/auth/register",
+            "/auth/register/request-otp",
+            "/auth/register/verify-otp",
             "/auth/login",
             "/auth/refresh",
+            "/auth/forgot-password",
+            "/auth/verify-otp",
+            "/auth/reset-password",
             "/auth/oauth2/**",
             "/oauth2/**",
+            "/login/oauth2/**",
             "/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
+            "/swagger-ui/index.html",
+            "/api/swagger-ui/**",
+            "/api/swagger-ui.html",
+            "/api/swagger-ui/index.html",
             "/actuator/health"
     };
 
@@ -70,12 +83,13 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .oauth2Login(oauth2 -> oauth2
+                    .authorizationEndpoint(endpoint -> endpoint
+                            .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository))
+                    .redirectionEndpoint(endpoint -> endpoint
+                        .baseUri("/auth/oauth2/callback/*"))
                     .userInfoEndpoint(info -> info.userService(oAuth2UserService))
                     .successHandler(oAuth2SuccessHandler)
-                    .authorizationEndpoint(endpoint ->
-                            endpoint.baseUri("/auth/oauth2/authorize"))
-                    .redirectionEndpoint(endpoint ->
-                            endpoint.baseUri("/auth/oauth2/callback/*"))
+                    .failureHandler(oAuth2FailureHandler)
             );
 
         return http.build();

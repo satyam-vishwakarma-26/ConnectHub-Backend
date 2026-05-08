@@ -38,7 +38,21 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Registration successful", response));
     }
+    @PostMapping("/register/request-otp")
+    @Operation(summary = "Request OTP for email verification during registration")
+    public ResponseEntity<ApiResponse<Void>> requestRegistrationOtp(
+            @Valid @RequestBody ForgotPasswordRequest request) { // Reusing DTO that has email
+        authService.requestRegistrationOtp(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("OTP sent to your email", null));
+    }
 
+    @PostMapping("/register/verify-otp")
+    @Operation(summary = "Verify OTP for registration")
+    public ResponseEntity<ApiResponse<Void>> verifyRegistrationOtp(
+            @Valid @RequestBody VerifyOtpRequest request) {
+        authService.verifyRegistrationOtp(request.getEmail(), request.getOtp());
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
+    }
     // ── Public: Login ─────────────────────────────────────
 
     @PostMapping("/login")
@@ -192,8 +206,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("User reactivated", null));
     }
 
-    // ── Admin: Delete User ────────────────────────────────
-
     @DeleteMapping("/admin/users/{userId}")
     @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     @Operation(summary = "Admin — permanently delete a user",
@@ -201,5 +213,27 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long userId) {
         authService.deleteUser(userId);
         return ResponseEntity.ok(ApiResponse.success("User deleted", null));
+    }
+
+    // ── Admin: Promote User ───────────────────────────────
+
+    @PutMapping("/admin/users/{userId}/promote")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
+    @Operation(summary = "Admin — promote a user to platform admin",
+               security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponse<Void>> promoteUser(@PathVariable Long userId) {
+        authService.promoteUser(userId);
+        return ResponseEntity.ok(ApiResponse.success("User promoted to platform admin", null));
+    }
+
+    // ── Admin: Demote User ────────────────────────────────
+
+    @PutMapping("/admin/users/{userId}/demote")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
+    @Operation(summary = "Admin — demote a platform admin to user",
+               security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<ApiResponse<Void>> demoteUser(@PathVariable Long userId) {
+        authService.demoteUser(userId);
+        return ResponseEntity.ok(ApiResponse.success("User demoted to regular user", null));
     }
 }

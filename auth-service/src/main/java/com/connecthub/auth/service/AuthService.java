@@ -9,7 +9,19 @@ import java.util.List;
 
 public interface AuthService {
 
-    // ── Auth ──────────────────────────────────────────────
+    /**
+     * Request an OTP for email verification during registration.
+     */
+    void requestRegistrationOtp(String email);
+
+    /**
+     * Verify the registration OTP.
+     */
+    void verifyRegistrationOtp(String email, String otp);
+
+    /**
+     * Register a new user with email and password.
+     */
     AuthResponse register(RegisterRequest request);
 
     AuthResponse login(LoginRequest request);
@@ -39,6 +51,10 @@ public interface AuthService {
     void reactivateUser(Long userId);
 
     void deleteUser(Long userId);
+
+    void promoteUser(Long userId);
+
+    void demoteUser(Long userId);
 
     List<UserResponse> getAllUsers();
 }

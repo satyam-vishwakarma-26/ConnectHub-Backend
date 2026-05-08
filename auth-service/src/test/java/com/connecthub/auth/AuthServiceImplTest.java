@@ -5,9 +5,11 @@ import com.connecthub.auth.dto.request.RegisterRequest;
 import com.connecthub.auth.dto.response.AuthResponse;
 import com.connecthub.auth.entity.User;
 import com.connecthub.auth.exception.DuplicateResourceException;
+import com.connecthub.auth.repository.PasswordResetOtpRepository;
 import com.connecthub.auth.repository.UserRepository;
 import com.connecthub.auth.security.CustomUserDetails;
 import com.connecthub.auth.security.JwtService;
+import com.connecthub.auth.service.EmailService;
 import com.connecthub.auth.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +36,8 @@ class AuthServiceImplTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
     @Mock private AuthenticationManager authenticationManager;
+    @Mock private EmailService emailService;
+    @Mock private PasswordResetOtpRepository otpRepository;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -66,6 +70,15 @@ class AuthServiceImplTest {
         req.setPassword("password123");
         req.setFullName("Alice Smith");
 
+        com.connecthub.auth.entity.PasswordResetOtp otpEntity = com.connecthub.auth.entity.PasswordResetOtp.builder()
+                .email("alice@example.com")
+                .isVerified(true)
+                .expiryTime(java.time.LocalDateTime.now().plusMinutes(5))
+                .isUsed(false)
+                .build();
+        when(otpRepository.findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(anyString()))
+                .thenReturn(Optional.of(otpEntity));
+
         when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(req.getUsername())).thenReturn(false);
         when(passwordEncoder.encode(req.getPassword())).thenReturn("$2a$12$hashed");
@@ -90,6 +103,15 @@ class AuthServiceImplTest {
         req.setUsername("alice");
         req.setPassword("password123");
 
+        com.connecthub.auth.entity.PasswordResetOtp otpEntity = com.connecthub.auth.entity.PasswordResetOtp.builder()
+                .email("alice@example.com")
+                .isVerified(true)
+                .expiryTime(java.time.LocalDateTime.now().plusMinutes(5))
+                .isUsed(false)
+                .build();
+        when(otpRepository.findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(anyString()))
+                .thenReturn(Optional.of(otpEntity));
+
         when(userRepository.existsByEmail(req.getEmail())).thenReturn(true);
 
         assertThatThrownBy(() -> authService.register(req))
@@ -104,6 +126,15 @@ class AuthServiceImplTest {
         req.setEmail("new@example.com");
         req.setUsername("alice");
         req.setPassword("password123");
+
+        com.connecthub.auth.entity.PasswordResetOtp otpEntity = com.connecthub.auth.entity.PasswordResetOtp.builder()
+                .email("new@example.com")
+                .isVerified(true)
+                .expiryTime(java.time.LocalDateTime.now().plusMinutes(5))
+                .isUsed(false)
+                .build();
+        when(otpRepository.findTopByEmailAndIsUsedFalseOrderByCreatedAtDesc(anyString()))
+                .thenReturn(Optional.of(otpEntity));
 
         when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
         when(userRepository.existsByUsername(req.getUsername())).thenReturn(true);
