@@ -1,0 +1,84 @@
+server:
+  port: 8087
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: notification-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/connecthub_notification?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 9981
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # ── FIX 3: Disable Spring Boot mail auto-configuration ──
+  # Without this, Spring tries to connect to SMTP on startup and
+  # throws MailAuthenticationException which crashes the context.
+  # Email will still work — we manually configure JavaMailSender
+  # via MailConfig.java only when credentials are provided.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+
+  thymeleaf:
+    cache: false
+
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:8080"
+
+  notification:
+    email-from: noreply@connecthub.com
+    email-name: ConnectHub
+    offline-threshold-minutes: 30
+    # FIX: set to false in dev — prevents email sending without real SMTP credentials
+    email-enabled: false
+
+  firebase:
+    credentials-path: classpath:firebase-service-account.json
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.connecthub: DEBUG
+    org.springframework.security: INFO
+    com.google.firebase: INFO

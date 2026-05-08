@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: connecthub-mysql-notif
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: connecthub_notification
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_notif_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD","mysqladmin","ping","-h","localhost","-uroot","-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-service:
+    build: .
+    container_name: connecthub-notification
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/connecthub_notification?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:connecthub-eureka-secret@host.docker.internal:8761/eureka/
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_USERNAME: your-email@gmail.com
+      SPRING_MAIL_PASSWORD: your-app-password
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_notif_data:
