@@ -1,0 +1,55 @@
+server:
+  port: ${SERVER_PORT:8082}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: room-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/connecthub_room?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 9981
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+app:
+  jwt:
+    # Must match the secret used in auth-service
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:5173,http://localhost:8080"
+
+  # auth-service base URL — used to resolve user info
+  auth-service:
+    url: http://localhost:8081/api
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    com.connecthub: DEBUG
+    org.springframework.security: INFO
