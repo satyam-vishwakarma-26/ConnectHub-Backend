@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: connecthub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  presence-service:
+    build: .
+    container_name: connecthub-presence
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://admin:connecthub-eureka-secret@host.docker.internal:8761/eureka/
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis_data:

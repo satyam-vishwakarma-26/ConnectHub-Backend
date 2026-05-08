@@ -1,0 +1,62 @@
+server:
+  port: ${SERVER_PORT:8085}
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: presence-service
+
+  # ── Redis — primary store for all presence data ──────────
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:             # leave blank if no auth
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:5173,http://localhost:8080"
+
+  presence:
+    # Session considered stale after this many seconds without a ping
+    stale-threshold-seconds: 60
+    # How often the cleanup scheduler runs (ms)
+    cleanup-interval-ms: 60000
+    # Heartbeat ping interval clients should use (ms)
+    ping-interval-ms: 30000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:connecthub-eureka-secret@localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    com.connecthub: DEBUG
+    org.springframework.security: INFO
