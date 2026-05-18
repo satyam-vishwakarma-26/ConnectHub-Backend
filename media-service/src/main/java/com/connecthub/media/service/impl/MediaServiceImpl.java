@@ -116,7 +116,7 @@ public class MediaServiceImpl implements MediaService {
         String combined = allowedImageTypes + "," + allowedDocTypes;
         validateMimeType(mimeType, combined, "file");
 
-        String resourceType = (mimeType.startsWith("image/") || mimeType.equals("application/pdf")) ? "image" : "raw";
+        String resourceType = mimeType.startsWith("image/") ? "image" : "auto";
         Map<?, ?> uploadResult = uploadToCloudinary(file, "files", uploaderId, resourceType);
         String publicId = uploadResult.get("public_id").toString();
         String url = uploadResult.get("secure_url").toString();
@@ -281,6 +281,10 @@ public class MediaServiceImpl implements MediaService {
 
     private String sanitize(String filename) {
         if (filename == null || filename.isBlank()) return "unnamed";
+        int dotIndex = filename.lastIndexOf('.');
+        if (dotIndex > 0) {
+            filename = filename.substring(0, dotIndex);
+        }
         return filename.replaceAll("[\\s/\\\\]", "_");
     }
 
