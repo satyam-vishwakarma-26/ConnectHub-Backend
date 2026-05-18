@@ -24,10 +24,18 @@ public class EmailProducer {
      */
     public void publishEmailEvent(EmailEvent event) {
         log.info("Publishing email event: type={}, to={}", event.getType(), event.getToEmail());
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EMAIL_EXCHANGE,
-                RabbitMQConfig.EMAIL_ROUTING_KEY,
-                event
-        );
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EMAIL_EXCHANGE,
+                    RabbitMQConfig.EMAIL_ROUTING_KEY,
+                    event
+            );
+            log.debug("Successfully published email event to RabbitMQ");
+        } catch (Exception e) {
+            log.error("Failed to publish email event to RabbitMQ for {}: {}", event.getToEmail(), e.getMessage());
+            // We don't rethrow because we don't want to break the main request
+            // in case of transient RabbitMQ issues. 
+            // The OTP will still be in the DB if the user tries to verify later.
+        }
     }
 }

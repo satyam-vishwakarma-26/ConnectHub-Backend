@@ -17,9 +17,8 @@ USER connecthub
 
 COPY --from=builder /build/target/auth-service-1.0.0.jar app.jar
 
+ENV SPRING_PROFILES_ACTIVE=prod
+
 EXPOSE 8081
 
-ENTRYPOINT ["java", \
-  "-Djava.security.egd=file:/dev/./urandom", \
-  "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:prod}", \
-  "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]

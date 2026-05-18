@@ -1,5 +1,6 @@
 server:
   port: 8081
+  forward-headers-strategy: framework
   servlet:
     context-path: /api
 
@@ -52,19 +53,19 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: email, profile
-            redirect-uri: "{baseUrl}/auth/oauth2/callback/{registrationId}"
+            redirect-uri: "https://13.50.25.162.nip.io/api/auth/oauth2/callback/{registrationId}"
           github:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
-            redirect-uri: "{baseUrl}/auth/oauth2/callback/{registrationId}"
+            redirect-uri: "https://13.50.25.162.nip.io/api/auth/oauth2/callback/{registrationId}"
 
 app:
   jwt:
     secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
     expiration-ms: 86400000
     refresh-expiration-ms: 604800000
-  frontend-url: http://localhost:3000
+  frontend-url: https://connect-hub-frontend-five.vercel.app
 
   cors:
     allowed-origins: "http://localhost:3000,http://localhost:8080"

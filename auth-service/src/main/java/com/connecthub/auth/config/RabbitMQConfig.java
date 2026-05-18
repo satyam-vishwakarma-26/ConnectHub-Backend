@@ -15,16 +15,19 @@ import org.springframework.context.annotation.Configuration;
 /**
  * RabbitMQ infrastructure: exchange, queue, binding, and JSON serializer.
  *
- * IMPORTANT: TypePrecedence.INFERRED is used so the consumer always deserializes
- * the message body using the @RabbitListener method parameter type (EmailEvent),
- * regardless of the __TypeId__ header sent by any producer (e.g. payment-service).
+ * IMPORTANT: TypePrecedence.INFERRED is used so the consumer always
+ * deserializes
+ * the message body using the @RabbitListener method parameter type
+ * (EmailEvent),
+ * regardless of the __TypeId__ header sent by any producer (e.g.
+ * payment-service).
  * This allows cross-service messaging without sharing DTO classes.
  */
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String EMAIL_EXCHANGE    = "connecthub.email.exchange";
-    public static final String EMAIL_QUEUE       = "connecthub.email.queue";
+    public static final String EMAIL_EXCHANGE = "connecthub.email.exchange";
+    public static final String EMAIL_QUEUE = "connecthub.email.queue";
     public static final String EMAIL_ROUTING_KEY = "email.send";
 
     @Bean
@@ -76,7 +79,7 @@ public class RabbitMQConfig {
 
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
-                                         MessageConverter messageConverter) {
+            MessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
         return template;
